@@ -13,6 +13,12 @@ namespace SandWater.WaterSim
         [SerializeField] private float despawnBelowY = -30f;
         [SerializeField] private Color waterColor = new Color(0.2f, 0.55f, 0.9f, 1f);
 
+        [Header("SSF (Phase 10 Metaball Visual)")]
+        [Tooltip("If set, used as the source material for water particles instead of URP/Lit. Assign an SsfElement-based material to enable Screen-Space Fluid rendering.")]
+        [SerializeField] private Material customParticleMaterial;
+        [Tooltip("Optional layer name applied to spawned particles. Used by SsfRendererFeature's LayerMask to isolate fluid renderers.")]
+        [SerializeField] private string fluidLayerName;
+
         private readonly Stack<WaterParticle> _pool = new Stack<WaterParticle>();
         private int _activeCount;
         private Material _sharedMaterial;
@@ -38,12 +44,24 @@ namespace SandWater.WaterSim
                 bounceCombine = PhysicsMaterialCombine.Minimum
             };
 
-            var shader = Shader.Find("Universal Render Pipeline/Lit");
-            if (shader == null) shader = Shader.Find("Standard");
-            _sharedMaterial = new Material(shader) { color = waterColor };
+            if (customParticleMaterial != null)
+            {
+                _sharedMaterial = new Material(customParticleMaterial);
+            }
+            else
+            {
+                var shader = Shader.Find("Universal Render Pipeline/Lit");
+                if (shader == null) shader = Shader.Find("Standard");
+                _sharedMaterial = new Material(shader) { color = waterColor };
+            }
+
             if (_sharedMaterial.HasProperty("_BaseColor"))
             {
                 _sharedMaterial.SetColor("_BaseColor", waterColor);
+            }
+            if (_sharedMaterial.HasProperty("_Radius"))
+            {
+                _sharedMaterial.SetFloat("_Radius", particleRadius);
             }
         }
 
@@ -79,6 +97,12 @@ namespace SandWater.WaterSim
             go.name = "WaterDrop";
             go.transform.SetParent(_particleRoot, false);
             go.transform.localScale = Vector3.one * (particleRadius * 2f);
+
+            if (!string.IsNullOrEmpty(fluidLayerName))
+            {
+                int layer = LayerMask.NameToLayer(fluidLayerName);
+                if (layer >= 0) go.layer = layer;
+            }
 
             var mr = go.GetComponent<MeshRenderer>();
             mr.sharedMaterial = _sharedMaterial;

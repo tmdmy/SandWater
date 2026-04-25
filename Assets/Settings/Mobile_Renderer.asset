@@ -13,11 +13,9 @@ MonoBehaviour:
   m_Name: Mobile_Renderer
   m_EditorClassIdentifier: 
   debugShaders:
-    debugReplacementPS: {fileID: 4800000, guid: cf852408f2e174538bcd9b7fda1c5ae7,
-      type: 3}
+    debugReplacementPS: {fileID: 4800000, guid: cf852408f2e174538bcd9b7fda1c5ae7, type: 3}
     hdrDebugViewPS: {fileID: 4800000, guid: 573620ae32aec764abd4d728906d2587, type: 3}
-    probeVolumeSamplingDebugComputeShader: {fileID: 7200000, guid: 53626a513ea68ce47b59dc1299fe3959,
-      type: 3}
+    probeVolumeSamplingDebugComputeShader: {fileID: 7200000, guid: 53626a513ea68ce47b59dc1299fe3959, type: 3}
   probeVolumeResources:
     probeVolumeDebugShader: {fileID: 0}
     probeVolumeFragmentationDebugShader: {fileID: 0}
@@ -26,11 +24,16 @@ MonoBehaviour:
     probeSamplingDebugMesh: {fileID: 0}
     probeSamplingDebugTexture: {fileID: 0}
     probeVolumeBlendStatesCS: {fileID: 0}
-  m_RendererFeatures: []
-  m_RendererFeatureMap: 
+  m_RendererFeatures:
+  - {fileID: 605034342288992634}
+  m_RendererFeatureMap: 7a290c5987836508
   m_UseNativeRenderPass: 1
+  xrSystemData: {fileID: 0}
   postProcessData: {fileID: 11400000, guid: 41439944d30ece34e96484bdb6645b55, type: 2}
-  m_AssetVersion: 2
+  m_AssetVersion: 3
+  m_PrepassLayerMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
   m_OpaqueLayerMask:
     serializedVersion: 2
     m_Bits: 4294967295
@@ -48,5 +51,40 @@ MonoBehaviour:
   m_RenderingMode: 0
   m_DepthPrimingMode: 0
   m_CopyDepthMode: 0
+  m_DepthAttachmentFormat: 0
+  m_DepthTextureFormat: 0
   m_AccurateGbufferNormals: 0
   m_IntermediateTextureMode: 0
+--- !u!114 &605034342288992634
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 136b37d0457c98f8c077fe2161fca2cc, type: 3}
+  m_Name: Ssf
+  m_EditorClassIdentifier: Assembly-CSharp::SandWater.SsfRendering.SsfRendererFeature
+  m_Active: 1
+  settings:
+    SsfShader: {fileID: 4800000, guid: f00faee3d896c7bc14c1742370e6851b, type: 3}
+    Event: 450
+    LayerMask:
+      serializedVersion: 2
+      m_Bits: 256
+    Tint: {r: 0.2, g: 0.55, b: 0.9, a: 1}
+    AmbientColor: {r: 0.4, g: 0.5, b: 0.6, a: 1}
+    SpecularColor: {r: 1, g: 1, b: 1, a: 1}
+    Glossiness: 2
+    DepthThreshold: 0.001
+    DepthScaleFactor: 1
+    DistortionStrength: 0.05
+    BlurryIterations: 3
+    EdgeColor: {r: 0, g: 0, b: 0, a: 1}
+    EdgeScaleFactor: 2
+    EdgeDepthThreshold: 0.2
+    EdgeNormalThreshold: 0.2
+    RenderQueueLowerBound: 0
+    RenderQueueUpperBound: 5000

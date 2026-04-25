@@ -4506,6 +4506,8 @@ MonoBehaviour:
   particleDrag: 0.1
   despawnBelowY: -30
   waterColor: {r: 0.2, g: 0.55, b: 0.9, a: 1}
+  customParticleMaterial: {fileID: 2100000, guid: 2be477fdce9100247abf20e6aec881f5, type: 2}
+  fluidLayerName: WaterFluid
 --- !u!4 &1954165250
 Transform:
   m_ObjectHideFlags: 0
