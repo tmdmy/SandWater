@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fcbc73af3c6fe5869d9ac548b5ff3dc7, type: 3}
+  m_Name: Stage3
+  m_EditorClassIdentifier: Assembly-CSharp::SandWater.Core.StagePreset
+  stageName: Stage 3 - High Plateau
+  description: Taller sand, tighter clock, and a small goal.
+  initialTerrainHeight: 0.45
+  playerStartPosition: {x: -5, y: 14.5, z: -5}
+  waterSourcePosition: {x: -22, y: 16, z: 0}
+  waterInitialVelocity: {x: 6, y: -1, z: 0}
+  waterSpawnRatePerSecond: 30
+  goalPosition: {x: 20, y: 12, z: 0}
+  goalBoxSize: {x: 3, y: 8, z: 3}
+  goalRequiredCount: 20
+  timeLimitSeconds: 180
+  brushInitialRadius: 3
+  brushInitialStrength: 6

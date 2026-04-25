@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 830913af402b8a1723f8e6a82f90575c, type: 3}
+  m_Name: StageDatabase
+  m_EditorClassIdentifier: Assembly-CSharp::SandWater.Core.StageDatabase
+  stages:
+  - {fileID: 11400000, guid: f465a28ed9e4c2340bcc5f02b68def3b, type: 2}
+  - {fileID: 11400000, guid: cebb5074f3efcbb45a735fb708468473, type: 2}
+  - {fileID: 11400000, guid: 85e329274f46be84f9d449dcd62b70b1, type: 2}

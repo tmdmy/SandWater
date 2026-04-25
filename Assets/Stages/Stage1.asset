@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fcbc73af3c6fe5869d9ac548b5ff3dc7, type: 3}
+  m_Name: Stage1
+  m_EditorClassIdentifier: Assembly-CSharp::SandWater.Core.StagePreset
+  stageName: Stage 1 - Easy Channel
+  description: Carve a short channel between source and goal.
+  initialTerrainHeight: 0.3
+  playerStartPosition: {x: 0, y: 10, z: 0}
+  waterSourcePosition: {x: -15, y: 11, z: 0}
+  waterInitialVelocity: {x: 5, y: -1, z: 0}
+  waterSpawnRatePerSecond: 40
+  goalPosition: {x: 8, y: 9, z: 0}
+  goalBoxSize: {x: 4, y: 8, z: 4}
+  goalRequiredCount: 10
+  timeLimitSeconds: 120
+  brushInitialRadius: 4
+  brushInitialStrength: 8
