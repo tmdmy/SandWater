@@ -33,6 +33,11 @@ namespace SandWater.EditorTools
         private static Material _matDeadBark;
         private static Material _matWithered;
         private static Material _matCrackedGround;
+        // Revival materials (initially hidden / swapped in when goal is reached).
+        private static Material _matAlive;
+        private static Material _matLeaves;
+        private static Material _matFlowerRed;
+        private static Material _matFlowerYellow;
 
         static Phase12WitheredVillageSetupTool()
         {
@@ -64,14 +69,64 @@ namespace SandWater.EditorTools
             HideExistingGoalVisual(goal.transform);
             BuildWellAt(goal);
 
+            var hiddenOnRevival = new System.Collections.Generic.List<GameObject>();
+
             var source = Object.FindAnyObjectByType<WaterSource>();
-            BuildVillageAround(goal.transform.position, source != null ? source.transform.position : Vector3.zero);
-            BuildWastesNear(source);
+            var villageRoot = BuildVillageAround(goal.transform.position, source != null ? source.transform.position : Vector3.zero, hiddenOnRevival);
+            var wastesRoot = BuildWastesNear(source, hiddenOnRevival);
+
+            WireVillageRevival(goal, villageRoot, wastesRoot, hiddenOnRevival);
 
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene);
             AssetDatabase.SaveAssets();
             Debug.Log("[SandWater] Phase 12 withered village setup complete.");
+        }
+
+        private static void WireVillageRevival(GoalZone goal, Transform villageRoot, Transform wastesRoot,
+                                               System.Collections.Generic.List<GameObject> hiddenOnRevival)
+        {
+            var revival = goal.GetComponent<VillageRevival>();
+            if (revival == null) revival = goal.gameObject.AddComponent<VillageRevival>();
+
+            var so = new SerializedObject(revival);
+            AssignIfPresent(so, "goalZone", goal);
+            AssignIfPresent(so, "witheredMaterial", _matWithered);
+            AssignIfPresent(so, "aliveMaterial", _matAlive);
+
+            var rootsProp = so.FindProperty("revivableRoots");
+            if (rootsProp != null)
+            {
+                rootsProp.arraySize = 0;
+                if (villageRoot != null)
+                {
+                    rootsProp.arraySize++;
+                    rootsProp.GetArrayElementAtIndex(rootsProp.arraySize - 1).objectReferenceValue = villageRoot;
+                }
+                if (wastesRoot != null)
+                {
+                    rootsProp.arraySize++;
+                    rootsProp.GetArrayElementAtIndex(rootsProp.arraySize - 1).objectReferenceValue = wastesRoot;
+                }
+            }
+
+            var hiddenProp = so.FindProperty("hiddenOnStart");
+            if (hiddenProp != null)
+            {
+                hiddenProp.arraySize = hiddenOnRevival.Count;
+                for (int i = 0; i < hiddenOnRevival.Count; i++)
+                {
+                    hiddenProp.GetArrayElementAtIndex(i).objectReferenceValue = hiddenOnRevival[i];
+                }
+            }
+
+            so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void AssignIfPresent(SerializedObject so, string propertyName, Object reference)
+        {
+            var prop = so.FindProperty(propertyName);
+            if (prop != null) prop.objectReferenceValue = reference;
         }
 
         [MenuItem("SandWater/Reset Phase 12 Setup Flag")]
@@ -94,6 +149,11 @@ namespace SandWater.EditorTools
             _matDeadBark = NewLitMaterial(new Color(0.32f, 0.22f, 0.15f), name: "Mat_DeadBark");
             _matWithered = NewLitMaterial(new Color(0.62f, 0.50f, 0.30f), name: "Mat_Withered");
             _matCrackedGround = NewLitMaterial(new Color(0.55f, 0.42f, 0.30f), name: "Mat_CrackedGround");
+            // Revival
+            _matAlive = NewLitMaterial(new Color(0.42f, 0.68f, 0.30f), name: "Mat_Alive");
+            _matLeaves = NewLitMaterial(new Color(0.36f, 0.72f, 0.28f), name: "Mat_Leaves");
+            _matFlowerRed = NewLitMaterial(new Color(0.92f, 0.30f, 0.28f), name: "Mat_FlowerRed");
+            _matFlowerYellow = NewLitMaterial(new Color(0.95f, 0.85f, 0.25f), name: "Mat_FlowerYellow");
         }
 
         private static Material NewLitMaterial(Color color, string name)
@@ -199,7 +259,8 @@ namespace SandWater.EditorTools
 
         // ---------------- Village (around goal) ----------------
 
-        private static void BuildVillageAround(Vector3 goalPos, Vector3 sourcePos)
+        private static Transform BuildVillageAround(Vector3 goalPos, Vector3 sourcePos,
+                                                    System.Collections.Generic.List<GameObject> hidden)
         {
             var existing = GameObject.Find(VillageGoName);
             if (existing != null) Object.DestroyImmediate(existing);
@@ -222,9 +283,9 @@ namespace SandWater.EditorTools
             BuildHouse(village.transform, goalPos + (-toSource) * 5.5f + right * 3.5f,  terrain, _matWallB);
             BuildHouse(village.transform, goalPos + (-toSource) * 7.5f, terrain, _matWallA);
 
-            // Two dead trees flanking the village
-            BuildDeadTree(village.transform, goalPos + right * -6f, terrain);
-            BuildDeadTree(village.transform, goalPos + right * 6f, terrain);
+            // Two dead trees flanking the village (with hidden leaves)
+            BuildDeadTree(village.transform, goalPos + right * -6f, terrain, hidden);
+            BuildDeadTree(village.transform, goalPos + right * 6f, terrain, hidden);
 
             // Withered crop patches in the foreground (on the path toward the source)
             for (int i = 0; i < 4; i++)
@@ -232,8 +293,10 @@ namespace SandWater.EditorTools
                 float t = (i + 1) / 5f; // 0.2 .. 0.8
                 Vector3 patchPos = Vector3.Lerp(goalPos, sourcePos, t * 0.45f);
                 patchPos += right * (i % 2 == 0 ? -2.5f : 2.5f);
-                BuildCropPatch(village.transform, patchPos, terrain);
+                BuildCropPatch(village.transform, patchPos, terrain, hidden);
             }
+
+            return village.transform;
         }
 
         private static void BuildHouse(Transform parent, Vector3 worldPos, Terrain terrain, Material wallMat)
@@ -270,7 +333,8 @@ namespace SandWater.EditorTools
             go.transform.rotation = Quaternion.Euler(0f, Random.Range(-15f, 15f), 0f);
         }
 
-        private static void BuildDeadTree(Transform parent, Vector3 worldPos, Terrain terrain)
+        private static void BuildDeadTree(Transform parent, Vector3 worldPos, Terrain terrain,
+                                          System.Collections.Generic.List<GameObject> hidden)
         {
             float baseY = SampleTerrainY(terrain, worldPos);
             var go = new GameObject("DeadTree");
@@ -291,25 +355,57 @@ namespace SandWater.EditorTools
                     localPos: Vector3.zero,
                     localScale: new Vector3(0.08f, 0.7f, 0.08f),
                     material: _matDeadBark);
-                b.transform.localPosition = new Vector3(0f, 2.0f, 0f);
-                b.transform.localRotation = Quaternion.Euler(0f, angle, 55f);
                 b.transform.localPosition = new Vector3(Mathf.Sin(angle * Mathf.Deg2Rad) * 0.4f, 2.0f, Mathf.Cos(angle * Mathf.Deg2Rad) * 0.4f);
+                b.transform.localRotation = Quaternion.Euler(0f, angle, 55f);
+
+                // Hidden leaves at the tip of each branch (revealed on revival)
+                Vector3 tipLocal = b.transform.localPosition + new Vector3(
+                    Mathf.Sin(angle * Mathf.Deg2Rad) * 0.4f, 0.4f, Mathf.Cos(angle * Mathf.Deg2Rad) * 0.4f);
+                AddHiddenLeafCluster(go.transform, "Leaves" + i, tipLocal, hidden);
+            }
+
+            // A canopy cluster on top of the trunk
+            AddHiddenLeafCluster(go.transform, "CanopyTop", new Vector3(0f, 2.4f, 0f), hidden);
+        }
+
+        /// <summary>
+        /// Creates an inactive cluster of small green spheres at the supplied LOCAL position
+        /// (relative to <paramref name="parent"/>), and registers each sphere in the hidden list
+        /// so it can be revealed on revival.
+        /// </summary>
+        private static void AddHiddenLeafCluster(Transform parent, string nameRoot, Vector3 localPos,
+                                                 System.Collections.Generic.List<GameObject> hidden)
+        {
+            int leafCount = Random.Range(4, 7);
+            for (int i = 0; i < leafCount; i++)
+            {
+                var leaf = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                leaf.name = nameRoot + "_" + i;
+                var col = leaf.GetComponent<Collider>();
+                if (col != null) Object.DestroyImmediate(col);
+                leaf.transform.SetParent(parent, false);
+                Vector3 jitter = Random.insideUnitSphere * 0.25f;
+                leaf.transform.localPosition = localPos + jitter;
+                float s = Random.Range(0.35f, 0.55f);
+                leaf.transform.localScale = new Vector3(s, s, s);
+                var mr = leaf.GetComponent<MeshRenderer>();
+                if (mr != null) mr.sharedMaterial = _matLeaves;
+                hidden.Add(leaf);
             }
         }
 
-        private static void BuildCropPatch(Transform parent, Vector3 worldPos, Terrain terrain)
+        private static void BuildCropPatch(Transform parent, Vector3 worldPos, Terrain terrain,
+                                           System.Collections.Generic.List<GameObject> hidden)
         {
             var go = new GameObject("WitheredCropPatch");
             go.transform.SetParent(parent, false);
             go.transform.position = worldPos;
 
-            // Many small dead plants. Each samples its own terrain Y so the patch follows
-            // heightmap undulations instead of hovering as a flat plate.
+            // Baseline withered plants — visible from the start.
             const int plantCount = 16;
             const float patchRadius = 1.4f;
             for (int i = 0; i < plantCount; i++)
             {
-                // Sunflower / golden-angle spiral for even spacing
                 float angle = i * 137.5f * Mathf.Deg2Rad;
                 float r = Mathf.Sqrt((i + 0.5f) / plantCount) * patchRadius;
                 float plantX = worldPos.x + Mathf.Cos(angle) * r;
@@ -323,6 +419,41 @@ namespace SandWater.EditorTools
                     worldPos: new Vector3(plantX, plantY, plantZ),
                     height: height, thickness: thickness, material: _matWithered);
             }
+
+            // Hidden EXTRA plants — appear (active=true) when revival fires, using the alive
+            // material directly. Placed at jittered positions in a slightly larger ring so the
+            // patch visibly thickens on revival.
+            const int extraCount = 12;
+            for (int i = 0; i < extraCount; i++)
+            {
+                float angle = (i + 0.5f) * 137.5f * Mathf.Deg2Rad + Random.value * 0.5f;
+                float r = Mathf.Sqrt((i + 0.5f) / extraCount) * (patchRadius + 0.4f);
+                float plantX = worldPos.x + Mathf.Cos(angle) * r;
+                float plantZ = worldPos.z + Mathf.Sin(angle) * r;
+                float plantY = SampleTerrainY(terrain, new Vector3(plantX, 0f, plantZ));
+
+                float height = Random.Range(0.25f, 0.55f);
+                float thickness = Random.Range(0.04f, 0.07f);
+
+                var extra = CreateGroundedPlantGo(go.transform, "AlivePlant" + i,
+                    worldPos: new Vector3(plantX, plantY, plantZ),
+                    height: height, thickness: thickness, material: _matAlive);
+                hidden.Add(extra);
+            }
+
+            // Hidden small flowers (red / yellow accent), appear on revival.
+            int flowerCount = Random.Range(3, 5);
+            for (int i = 0; i < flowerCount; i++)
+            {
+                float fx = worldPos.x + Random.Range(-patchRadius, patchRadius);
+                float fz = worldPos.z + Random.Range(-patchRadius, patchRadius);
+                float fy = SampleTerrainY(terrain, new Vector3(fx, 0f, fz));
+                Material flowerMat = (i % 2 == 0) ? _matFlowerRed : _matFlowerYellow;
+                var flower = CreateGroundedPlantGo(go.transform, "Flower" + i,
+                    worldPos: new Vector3(fx, fy, fz),
+                    height: Random.Range(0.18f, 0.30f), thickness: 0.10f, material: flowerMat);
+                hidden.Add(flower);
+            }
         }
 
         /// <summary>
@@ -335,6 +466,13 @@ namespace SandWater.EditorTools
         private static void CreateGroundedPlant(Transform parent, string name, Vector3 worldPos,
                                                 float height, float thickness, Material material)
         {
+            CreateGroundedPlantGo(parent, name, worldPos, height, thickness, material);
+        }
+
+        /// <summary>Same as CreateGroundedPlant but returns the created GameObject (for hidden lists).</summary>
+        private static GameObject CreateGroundedPlantGo(Transform parent, string name, Vector3 worldPos,
+                                                        float height, float thickness, Material material)
+        {
             float totalHeight = height + PlantBuryDepth;
 
             var plant = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -342,8 +480,6 @@ namespace SandWater.EditorTools
             var col = plant.GetComponent<Collider>();
             if (col != null) Object.DestroyImmediate(col);
             plant.transform.SetParent(parent, true);
-            // Center the cube so visible top ends at worldPos.y + height and the buried end
-            // reaches worldPos.y - PlantBuryDepth.
             plant.transform.position = new Vector3(
                 worldPos.x,
                 worldPos.y + (height - PlantBuryDepth) * 0.5f,
@@ -355,13 +491,15 @@ namespace SandWater.EditorTools
             plant.transform.localScale = new Vector3(thickness, totalHeight, thickness);
             var mr = plant.GetComponent<MeshRenderer>();
             if (mr != null) mr.sharedMaterial = material;
+            return plant;
         }
 
         // ---------------- Wastes (near source) ----------------
 
-        private static void BuildWastesNear(WaterSource source)
+        private static Transform BuildWastesNear(WaterSource source,
+                                                 System.Collections.Generic.List<GameObject> hidden)
         {
-            if (source == null) return;
+            if (source == null) return null;
             var existing = GameObject.Find(WastesGoName);
             if (existing != null) Object.DestroyImmediate(existing);
 
@@ -372,16 +510,19 @@ namespace SandWater.EditorTools
             Vector3 sp = source.transform.position;
 
             // Couple of dead trees flanking the spring
-            BuildDeadTree(wastes.transform, sp + new Vector3(2f, 0f, 2.5f), terrain);
-            BuildDeadTree(wastes.transform, sp + new Vector3(-1.5f, 0f, -3f), terrain);
+            BuildDeadTree(wastes.transform, sp + new Vector3(2f, 0f, 2.5f), terrain, hidden);
+            BuildDeadTree(wastes.transform, sp + new Vector3(-1.5f, 0f, -3f), terrain, hidden);
 
             // Dense dead-grass tufts around the spring (per-tuft terrain sampling, no floating plates).
-            BuildDeadGrassPatch(wastes.transform, sp + new Vector3(1.5f, 0f, 0f), terrain, radius: 2.5f, count: 24);
-            BuildDeadGrassPatch(wastes.transform, sp + new Vector3(-2.5f, 0f, 1.5f), terrain, radius: 1.6f, count: 14);
+            BuildDeadGrassPatch(wastes.transform, sp + new Vector3(1.5f, 0f, 0f), terrain, radius: 2.5f, count: 24, hidden: hidden);
+            BuildDeadGrassPatch(wastes.transform, sp + new Vector3(-2.5f, 0f, 1.5f), terrain, radius: 1.6f, count: 14, hidden: hidden);
+
+            return wastes.transform;
         }
 
         private static void BuildDeadGrassPatch(Transform parent, Vector3 centerPos, Terrain terrain,
-                                                float radius, int count)
+                                                float radius, int count,
+                                                System.Collections.Generic.List<GameObject> hidden)
         {
             var go = new GameObject("DeadGrassPatch");
             go.transform.SetParent(parent, false);
@@ -399,6 +540,23 @@ namespace SandWater.EditorTools
                 CreateGroundedPlant(go.transform, "Tuft" + i,
                     worldPos: new Vector3(x, y, z),
                     height: h, thickness: 0.04f, material: _matWithered);
+            }
+
+            // Hidden alive tufts that appear on revival (extra density + green color)
+            int extraCount = Mathf.Max(6, count / 2);
+            for (int i = 0; i < extraCount; i++)
+            {
+                float angle = (i + 0.3f) * 137.5f * Mathf.Deg2Rad + Random.value * 0.3f;
+                float r = Mathf.Sqrt((i + 0.5f) / extraCount) * (radius + 0.3f);
+                float x = centerPos.x + Mathf.Cos(angle) * r;
+                float z = centerPos.z + Mathf.Sin(angle) * r;
+                float y = SampleTerrainY(terrain, new Vector3(x, 0f, z));
+
+                float h = Random.Range(0.15f, 0.35f);
+                var aliveTuft = CreateGroundedPlantGo(go.transform, "AliveTuft" + i,
+                    worldPos: new Vector3(x, y, z),
+                    height: h, thickness: 0.05f, material: _matAlive);
+                hidden.Add(aliveTuft);
             }
         }
 
