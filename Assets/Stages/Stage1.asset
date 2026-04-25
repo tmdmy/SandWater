@@ -20,7 +20,7 @@ MonoBehaviour:
   waterInitialVelocity: {x: 5, y: -1, z: 0}
   waterSpawnRatePerSecond: 40
   goalPosition: {x: 8, y: 9, z: 0}
-  goalBoxSize: {x: 4, y: 8, z: 4}
+  goalBoxSize: {x: 4, y: 30, z: 4}
   goalRequiredCount: 10
   timeLimitSeconds: 120
   brushInitialRadius: 4
