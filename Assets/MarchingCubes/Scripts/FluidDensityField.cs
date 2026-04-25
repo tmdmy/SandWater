@@ -44,6 +44,33 @@ namespace SandWater.MarchingCubes
         }
 
         /// <summary>
+        /// Returns the outward surface normal (negated density gradient) at the given grid corner.
+        /// Uses central differences in the interior and one-sided differences at boundaries.
+        /// The result is NOT normalized — caller normalizes after edge interpolation.
+        /// </summary>
+        public Vector3 SampleGradient(int x, int y, int z)
+        {
+            int x0 = Mathf.Max(0, x - 1);
+            int x1 = Mathf.Min(Resolution.x - 1, x + 1);
+            int y0 = Mathf.Max(0, y - 1);
+            int y1 = Mathf.Min(Resolution.y - 1, y + 1);
+            int z0 = Mathf.Max(0, z - 1);
+            int z1 = Mathf.Min(Resolution.z - 1, z + 1);
+
+            float spanX = Mathf.Max(1e-6f, (x1 - x0) * CellSize.x);
+            float spanY = Mathf.Max(1e-6f, (y1 - y0) * CellSize.y);
+            float spanZ = Mathf.Max(1e-6f, (z1 - z0) * CellSize.z);
+
+            float dx = (Sample(x1, y, z) - Sample(x0, y, z)) / spanX;
+            float dy = (Sample(x, y1, z) - Sample(x, y0, z)) / spanY;
+            float dz = (Sample(x, y, z1) - Sample(x, y, z0)) / spanZ;
+
+            // The density rises toward the interior of the fluid; the outward surface
+            // normal therefore points opposite to the gradient.
+            return new Vector3(-dx, -dy, -dz);
+        }
+
+        /// <summary>
         /// Splat each particle into the field as a smooth metaball:
         ///   contribution(r) = (1 - (r/influenceRadius)^2)^2  for r &lt; influenceRadius, else 0.
         /// </summary>

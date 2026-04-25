@@ -5,25 +5,30 @@ namespace SandWater.MarchingCubes
 {
     /// <summary>
     /// Extracts a triangle mesh from a FluidDensityField via the Marching Cubes algorithm.
-    /// Uses non-shared vertices (3 per triangle) for simplicity. Mesh.RecalculateNormals() is
-    /// expected to be called by the caller for flat shading; the resulting flat shading is
-    /// acceptable for water-like translucent rendering.
+    /// Vertex normals are computed from the negated density gradient at each corner and
+    /// linearly interpolated along edges (matching the position interpolation parameter).
+    /// This produces smoothly shaded surfaces without per-vertex sharing or smoothing groups.
     /// </summary>
     public class MarchingCubesGenerator
     {
         private readonly List<Vector3> _vertices = new List<Vector3>(4096);
         private readonly List<int> _triangles = new List<int>(8192);
+        private readonly List<Vector3> _normals = new List<Vector3>(4096);
 
         private readonly float[] _cornerDensity = new float[8];
+        private readonly Vector3[] _cornerGradient = new Vector3[8];
         private readonly Vector3[] _edgeVertices = new Vector3[12];
+        private readonly Vector3[] _edgeNormals = new Vector3[12];
 
         public List<Vector3> Vertices => _vertices;
         public List<int> Triangles => _triangles;
+        public List<Vector3> Normals => _normals;
 
         public void Generate(FluidDensityField field, float isoValue)
         {
             _vertices.Clear();
             _triangles.Clear();
+            _normals.Clear();
 
             var density = field.Density;
             if (density == null || density.Length == 0) return;
@@ -57,6 +62,7 @@ namespace SandWater.MarchingCubes
                             int cz = z + cornerOffsets[i, 2];
                             float d = density[cx + resX * cy + sliceXY * cz];
                             _cornerDensity[i] = d;
+                            _cornerGradient[i] = field.SampleGradient(cx, cy, cz);
                             if (d >= isoValue) cubeIndex |= (1 << i);
                         }
 
@@ -78,20 +84,30 @@ namespace SandWater.MarchingCubes
                                 origin.y + (y + cornerOffsets[bi, 1]) * cellSize.y,
                                 origin.z + (z + cornerOffsets[bi, 2]) * cellSize.z);
 
-                            _edgeVertices[e] = InterpolateEdge(aPos, bPos, _cornerDensity[ai], _cornerDensity[bi], isoValue);
+                            float densA = _cornerDensity[ai];
+                            float densB = _cornerDensity[bi];
+                            float t = ComputeT(densA, densB, isoValue);
+
+                            _edgeVertices[e] = aPos + (bPos - aPos) * t;
+                            Vector3 nrm = _cornerGradient[ai] + (_cornerGradient[bi] - _cornerGradient[ai]) * t;
+                            float magnitude = nrm.magnitude;
+                            _edgeNormals[e] = magnitude > 1e-6f ? nrm / magnitude : Vector3.up;
                         }
 
-                        for (int t = 0; t < 16; t += 3)
+                        for (int ti = 0; ti < 16; ti += 3)
                         {
-                            int e0 = triTable[cubeIndex, t];
+                            int e0 = triTable[cubeIndex, ti];
                             if (e0 == -1) break;
-                            int e1 = triTable[cubeIndex, t + 1];
-                            int e2 = triTable[cubeIndex, t + 2];
+                            int e1 = triTable[cubeIndex, ti + 1];
+                            int e2 = triTable[cubeIndex, ti + 2];
 
                             int baseIdx = _vertices.Count;
                             _vertices.Add(_edgeVertices[e0]);
                             _vertices.Add(_edgeVertices[e1]);
                             _vertices.Add(_edgeVertices[e2]);
+                            _normals.Add(_edgeNormals[e0]);
+                            _normals.Add(_edgeNormals[e1]);
+                            _normals.Add(_edgeNormals[e2]);
                             _triangles.Add(baseIdx);
                             _triangles.Add(baseIdx + 1);
                             _triangles.Add(baseIdx + 2);
@@ -101,12 +117,11 @@ namespace SandWater.MarchingCubes
             }
         }
 
-        private static Vector3 InterpolateEdge(Vector3 a, Vector3 b, float densA, float densB, float iso)
+        private static float ComputeT(float densA, float densB, float iso)
         {
             float diff = densB - densA;
-            if (Mathf.Abs(diff) < 1e-5f) return (a + b) * 0.5f;
-            float t = Mathf.Clamp01((iso - densA) / diff);
-            return a + (b - a) * t;
+            if (Mathf.Abs(diff) < 1e-5f) return 0.5f;
+            return Mathf.Clamp01((iso - densA) / diff);
         }
     }
 }

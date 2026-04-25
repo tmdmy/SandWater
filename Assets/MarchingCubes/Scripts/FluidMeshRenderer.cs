@@ -85,7 +85,7 @@ namespace SandWater.MarchingCubes
             {
                 _mesh.SetVertices(_generator.Vertices);
                 _mesh.SetTriangles(_generator.Triangles, 0);
-                _mesh.RecalculateNormals();
+                _mesh.SetNormals(_generator.Normals);
                 _mesh.RecalculateBounds();
             }
         }
