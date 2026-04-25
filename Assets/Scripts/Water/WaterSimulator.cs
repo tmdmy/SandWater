@@ -13,6 +13,9 @@ namespace SandWater.WaterSim
         [SerializeField] private float despawnBelowY = -30f;
         [SerializeField] private Color waterColor = new Color(0.2f, 0.55f, 0.9f, 1f);
 
+        [Header("Phase 11 (Marching Cubes) — hide individual sphere meshes; collider stays")]
+        [SerializeField] private bool hideParticleMesh;
+
         private readonly Stack<WaterParticle> _pool = new Stack<WaterParticle>();
         private int _activeCount;
         private Material _sharedMaterial;
@@ -63,6 +66,26 @@ namespace SandWater.WaterSim
             return particle;
         }
 
+        /// <summary>
+        /// Fills the supplied buffer with the world-space positions of currently active particles.
+        /// Used by Phase 11's FluidMeshRenderer to feed the Marching Cubes density field.
+        /// </summary>
+        public void GetActiveParticlePositions(List<Vector3> buffer)
+        {
+            if (buffer == null) return;
+            buffer.Clear();
+            if (_particleRoot == null) return;
+            int count = _particleRoot.childCount;
+            for (int i = 0; i < count; i++)
+            {
+                var child = _particleRoot.GetChild(i);
+                if (child.gameObject.activeSelf)
+                {
+                    buffer.Add(child.position);
+                }
+            }
+        }
+
         public void Recycle(WaterParticle particle)
         {
             if (particle == null) return;
@@ -83,6 +106,7 @@ namespace SandWater.WaterSim
             var mr = go.GetComponent<MeshRenderer>();
             mr.sharedMaterial = _sharedMaterial;
             mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            mr.enabled = !hideParticleMesh;
 
             var sc = go.GetComponent<SphereCollider>();
             sc.radius = 0.5f;
