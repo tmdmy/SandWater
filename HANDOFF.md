@@ -1,11 +1,29 @@
 # HANDOFF.md — 実装引き継ぎメモ
 
-最終更新: **2026-04-16**
+最終更新: **2026-04-27**
 次回再開ポイント: **Phase 9.3（水量・地形の保存 / ロード）**
 
 ## 現在の状態
 
-Phase 1〜8 および 9.1（制限時間モード）/ 9.2（複数ステージ）まで実装完了。
+Phase 1〜8 / 9.1（制限時間）/ 9.2（複数ステージ）に加えて、main に
+**Phase 10〜13（実験成果）が統合済**:
+- Phase 10: 球水を **Marching Cubes による滑らかな水面** に置換（密度勾配ベースの法線）
+- Phase 11: **井戸ゴール + 家の村** （Phase 12 に統合済）
+- Phase 12: **「枯れた村に水を届ける」テーマ** + 井戸の水位視覚化 + 蘇生演出
+- Phase 13: **Pandazole AssetStore パック** で装飾を Low Poly 化 + HideOnRevival 機構
+
+## 🔧 新規 clone / worktree 作成時の再インポート手順
+
+リポジトリには **AssetStore のパックは含まれていない** ため、以下を手動で再インポート:
+
+1. **TerrainSampleAssets** （砂テクスチャ）:
+   - Window → Package Management → Package Manager → In Project → "Terrain Tools" → Samples タブ → "Sample Asset Pack" → Import
+2. **Pandazole - Nature Environment Low poly Pack** （植物・木・骨など）:
+   - Window → Asset Store → "Pandazole - Nature Environment Low poly Pack" を取得 → Import
+   - インポート後、**Built-in → URP マテリアル変換** が必要:
+     - Window → Rendering → Render Pipeline Converter → Built-in to URP → Material Reference Converter / Material Shader Converter にチェック → Scan → Convert Assets
+
+両方とも **GUID は固定**なので、再インポートすれば既存シーン (`[CustomDecorations]` のプレハブ参照など) は自動的に解決します。
 
 | Phase | 状態 | 備考 |
 |-------|------|------|
