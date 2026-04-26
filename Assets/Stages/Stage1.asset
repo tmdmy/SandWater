@@ -16,9 +16,9 @@ MonoBehaviour:
   description: Carve a short channel between source and goal.
   initialTerrainHeight: 0.3
   playerStartPosition: {x: 0, y: 10, z: 0}
-  waterSourcePosition: {x: -15, y: 11, z: 0}
-  waterInitialVelocity: {x: 5, y: -1, z: 0}
-  waterSpawnRatePerSecond: 40
+  waterSourcePosition: {x: -15, y: 9, z: 0}
+  waterInitialVelocity: {x: 4, y: 3, z: 0}
+  waterSpawnRatePerSecond: 80
   goalPosition: {x: 8, y: 9, z: 0}
   goalBoxSize: {x: 4, y: 30, z: 4}
   goalRequiredCount: 10

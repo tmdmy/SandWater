@@ -5,9 +5,12 @@ namespace SandWater.WaterSim
     public class WaterSource : MonoBehaviour
     {
         [SerializeField] private WaterSimulator simulator;
-        [SerializeField] private float spawnRatePerSecond = 40f;
-        [SerializeField] private float spawnSpread = 0.15f;
-        [SerializeField] private Vector3 initialVelocity = new Vector3(5f, -1f, 0f);
+        [SerializeField] private float spawnRatePerSecond = 80f;
+        [Tooltip("Random horizontal offset radius around the source position when spawning. 0 = exact same point (tight stream).")]
+        [SerializeField, Range(0f, 1f)] private float spawnSpread = 0.05f;
+        [SerializeField] private Vector3 initialVelocity = new Vector3(4f, 5f, 0f);
+        [Tooltip("Half-angle (degrees) of the random cone that perturbs each particle's velocity direction. 0 = perfectly focused stream.")]
+        [SerializeField, Range(0f, 30f)] private float velocitySpreadDegrees = 3f;
 
         private float _spawnAccumulator;
 
@@ -35,7 +38,18 @@ namespace SandWater.WaterSim
 
                 Vector3 offset = Random.insideUnitSphere * spawnSpread;
                 offset.y = 0f;
-                simulator.Spawn(transform.position + offset, initialVelocity);
+
+                Vector3 spawnVelocity = initialVelocity;
+                if (velocitySpreadDegrees > 0f && initialVelocity.sqrMagnitude > 0.001f)
+                {
+                    Quaternion jitter = Quaternion.Euler(
+                        Random.Range(-velocitySpreadDegrees, velocitySpreadDegrees),
+                        Random.Range(-velocitySpreadDegrees, velocitySpreadDegrees),
+                        0f);
+                    spawnVelocity = jitter * initialVelocity;
+                }
+
+                simulator.Spawn(transform.position + offset, spawnVelocity);
             }
         }
 

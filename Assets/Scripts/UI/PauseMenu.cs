@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using SandWater.Core;
 using SandWater.Inputs;
+using UnityEngine.SceneManagement;
 
 namespace SandWater.UI
 {
@@ -10,6 +11,7 @@ namespace SandWater.UI
         [SerializeField] private GameObject panel;
         [SerializeField] private Button resumeButton;
         [SerializeField] private Button retryButton;
+        [SerializeField] private Button stageSelectButton;
         [SerializeField] private Button quitButton;
 
         private CursorLockMode _savedLockMode;
@@ -20,6 +22,7 @@ namespace SandWater.UI
             if (panel != null) panel.SetActive(false);
             if (resumeButton != null) resumeButton.onClick.AddListener(OnResume);
             if (retryButton != null) retryButton.onClick.AddListener(OnRetry);
+            if (stageSelectButton != null) stageSelectButton.onClick.AddListener(OnStageSelect);
             if (quitButton != null) quitButton.onClick.AddListener(OnQuit);
         }
 
@@ -39,6 +42,7 @@ namespace SandWater.UI
         {
             if (resumeButton != null) resumeButton.onClick.RemoveListener(OnResume);
             if (retryButton != null) retryButton.onClick.RemoveListener(OnRetry);
+            if (stageSelectButton != null) stageSelectButton.onClick.RemoveListener(OnStageSelect);
             if (quitButton != null) quitButton.onClick.RemoveListener(OnQuit);
         }
 
@@ -87,6 +91,16 @@ namespace SandWater.UI
         {
             ShowPanel(false);
             GameManager.Instance?.RetryMain();
+        }
+
+        private void OnStageSelect()
+        {
+            // Reset time scale and cursor lock so the Title scene runs normally.
+            Time.timeScale = 1f;
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+            ShowPanel(false);
+            SceneLoader.LoadTitle();
         }
 
         private void OnQuit()

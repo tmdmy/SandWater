@@ -14,14 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SandWater.Core.StagePreset
   stageName: Stage 2 - Longer Run
   description: Goal is farther away. Budget your strokes.
-  initialTerrainHeight: 0.35
-  playerStartPosition: {x: 0, y: 11.5, z: 0}
-  waterSourcePosition: {x: -20, y: 13, z: -5}
-  waterInitialVelocity: {x: 5, y: -1, z: 1}
-  waterSpawnRatePerSecond: 35
-  goalPosition: {x: 18, y: 10, z: 5}
+  initialTerrainHeight: 0.3
+  playerStartPosition: {x: 0, y: 10, z: 0}
+  waterSourcePosition: {x: -25, y: 9, z: 0}
+  waterInitialVelocity: {x: 4, y: 3, z: 0}
+  waterSpawnRatePerSecond: 80
+  goalPosition: {x: 8, y: 9, z: 0}
   goalBoxSize: {x: 4, y: 30, z: 4}
-  goalRequiredCount: 15
+  goalRequiredCount: 10
   timeLimitSeconds: 150
-  brushInitialRadius: 3.5
-  brushInitialStrength: 7
+  brushInitialRadius: 4
+  brushInitialStrength: 8
