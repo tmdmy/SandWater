@@ -82,3 +82,8 @@ memory/
 # Terrain Tools Sample Assets — re-import via Package Manager per clone/worktree
 /Assets/TerrainSampleAssets/
 /Assets/TerrainSampleAssets.meta
+
+# Pandazole AssetStore pack — re-import via AssetStore per clone/worktree.
+# Prefab GUIDs are stable so [CustomDecorations] references resolve after re-import.
+/Assets/Pandazole_Ultimate_Pack/
+/Assets/Pandazole_Ultimate_Pack.meta

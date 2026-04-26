@@ -26,6 +26,10 @@ namespace SandWater.WitheredVillage
         [Tooltip("These GameObjects are deactivated at Start and re-activated when revival fires.")]
         [SerializeField] private List<GameObject> hiddenOnStart = new List<GameObject>();
 
+        [Header("Hide-on-Revival")]
+        [Tooltip("These GameObjects are visible at start and deactivated when revival fires (e.g. withered prefabs that should disappear when the oasis returns).")]
+        [SerializeField] private List<GameObject> hideOnRevival = new List<GameObject>();
+
         [Header("Tuning")]
         [SerializeField, Range(0.5f, 1f)] private float revivalThreshold = 0.99f;
 
@@ -95,7 +99,17 @@ namespace SandWater.WitheredVillage
                 }
             }
 
-            Debug.Log($"[VillageRevival] Revived: swapped {swapped}/{swapCandidates} materials, activated {activated}/{hiddenOnStart.Count} hidden objects.");
+            int deactivated = 0;
+            for (int i = 0; i < hideOnRevival.Count; i++)
+            {
+                if (hideOnRevival[i] != null)
+                {
+                    hideOnRevival[i].SetActive(false);
+                    deactivated++;
+                }
+            }
+
+            Debug.Log($"[VillageRevival] Revived: swapped {swapped}/{swapCandidates} materials, activated {activated}/{hiddenOnStart.Count} hidden, deactivated {deactivated}/{hideOnRevival.Count} withered.");
         }
     }
 }
